@@ -1,59 +1,50 @@
-using System.Collections;
-using System.Collections.Generic;
+/*Please do support www.bitshiftprogrammer.com by joining the facebook page : fb.com/BitshiftProgrammer
+Legal Stuff:
+This code is free to use no restrictions but attribution would be appreciated.
+Any damage caused either partly or completly due to usage this stuff is not my responsibility*/
 using UnityEngine;
 
 public class Wobble : MonoBehaviour
 {
-    Renderer rend;
-    Vector3 lastPos;
-    Vector3 velocity;
-    Vector3 lastRot;  
-    Vector3 angularVelocity;
     public float MaxWobble = 0.03f;
-    public float WobbleSpeed = 1f;
-    public float Recovery = 1f;
-    float wobbleAmountX;
-    float wobbleAmountZ;
+    public float WobbleSpeed = 5.0f;
+    public float RecoveryRate = 1f;
+
+    Renderer rend;
+    Vector3 prevPos;
+    Vector3 prevRot;
     float wobbleAmountToAddX;
     float wobbleAmountToAddZ;
-    float pulse;
-    float time = 0.5f;
-    
-    // Use this for initialization
+
     void Start()
     {
         rend = GetComponent<Renderer>();
     }
+
     private void Update()
     {
-        time += Time.deltaTime;
-        // decrease wobble over time
-        wobbleAmountToAddX = Mathf.Lerp(wobbleAmountToAddX, 0, Time.deltaTime * (Recovery));
-        wobbleAmountToAddZ = Mathf.Lerp(wobbleAmountToAddZ, 0, Time.deltaTime * (Recovery));
+        // decreases the wobble over time
+        wobbleAmountToAddX = Mathf.Lerp(wobbleAmountToAddX, 0, Time.deltaTime * RecoveryRate);
+        wobbleAmountToAddZ = Mathf.Lerp(wobbleAmountToAddZ, 0, Time.deltaTime * RecoveryRate);
 
         // make a sine wave of the decreasing wobble
-        pulse = 2 * Mathf.PI * WobbleSpeed;
-        wobbleAmountX = wobbleAmountToAddX * Mathf.Sin(pulse * time);
-        wobbleAmountZ = wobbleAmountToAddZ * Mathf.Sin(pulse * time);
+        float wobbleAmountX = wobbleAmountToAddX * Mathf.Sin(WobbleSpeed * Time.time);
+        float wobbleAmountZ = wobbleAmountToAddZ * Mathf.Sin(WobbleSpeed * Time.time);
 
         // send it to the shader
         rend.material.SetFloat("_WobbleX", wobbleAmountX);
         rend.material.SetFloat("_WobbleZ", wobbleAmountZ);
 
-        // velocity
-        velocity = (lastPos - transform.position) / Time.deltaTime;
-        angularVelocity = transform.rotation.eulerAngles - lastRot;
+        // Move Speed
+        Vector3 moveSpeed = (prevPos - transform.position) / Time.deltaTime;
+        Vector3 rotationDelta = transform.rotation.eulerAngles - prevRot;
 
+        // add clamped speed to wobble
+        wobbleAmountToAddX += Mathf.Clamp((moveSpeed.x + (rotationDelta.z * 0.2f)) * MaxWobble, -MaxWobble, MaxWobble);
+        wobbleAmountToAddZ += Mathf.Clamp((moveSpeed.z + (rotationDelta.x * 0.2f)) * MaxWobble, -MaxWobble, MaxWobble);
 
-        // add clamped velocity to wobble
-        wobbleAmountToAddX += Mathf.Clamp((velocity.x + (angularVelocity.z * 0.2f)) * MaxWobble, -MaxWobble, MaxWobble);
-        wobbleAmountToAddZ += Mathf.Clamp((velocity.z + (angularVelocity.x * 0.2f)) * MaxWobble, -MaxWobble, MaxWobble);
-
-        // keep last position
-        lastPos = transform.position;
-        lastRot = transform.rotation.eulerAngles;
+        // save the last position
+        prevPos = transform.position;
+        prevRot = transform.rotation.eulerAngles;
     }
-
-
-
 }
